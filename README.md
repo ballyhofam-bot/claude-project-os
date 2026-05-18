@@ -29,36 +29,41 @@ Slash commands (`/morning`, `/debrief`, `/close`, `/weekly`) are markdown files 
 ## Repo Structure
 
 ```
-├── blueprint.html                  ← Visual architecture reference (open in browser)
+├── blueprint.html                      ← Visual architecture reference (open in browser)
 ├── project-instructions-template.md
-├── layer-1-memory/
-│   ├── ref-context.md              ← Who you are, daily cadence, what to watch for
-│   ├── kb-tribal-knowledge.md      ← Undocumented institutional knowledge
-│   ├── kb-people-intel.md          ← Relationship dynamics and working styles
-│   ├── log-decisions.md            ← Key decisions with context and rationale
-│   ├── log-sessions.md             ← Running session history
-│   └── 00-index.md                 ← File index and naming conventions
-├── layer-2-infrastructure/
-│   ├── worker-api.mjs              ← Cloudflare Worker source
-│   ├── schema.sql                  ← D1 database schema
-│   └── deploy-notes.md             ← Deploy patterns and gotchas
-└── layer-3-skills/
-    ├── skill-morning.md            ← /morning — daily brief
-    ├── skill-debrief.md            ← /debrief — post-meeting extraction
-    ├── skill-close.md              ← /close — end of session reconciliation
-    ├── skill-status.md             ← /status — quick pulse
-    ├── skill-weekly.md             ← /weekly — Friday review and audit
-    └── skill-manager-prep.md       ← /manager-prep — 1-on-1 prep
+│
+├── reference/
+│   └── ref-context.md                  ← Who you are, daily cadence, what to watch for
+│
+├── knowledge-base/
+│   ├── kb-tribal-knowledge.md          ← Undocumented institutional knowledge
+│   ├── kb-people-intel.md              ← Relationship dynamics and working styles
+│   ├── kb-lessons.md                   ← Dead ends and mistakes (force-read every morning)
+│   ├── log-decisions.md                ← Key decisions with context and rationale
+│   └── log-sessions.md                 ← Running session history
+│
+├── skills/
+│   ├── skill-morning.md                ← /morning — daily brief
+│   ├── skill-debrief.md                ← /debrief — post-meeting extraction
+│   ├── skill-close.md                  ← /close — end of session reconciliation
+│   ├── skill-status.md                 ← /status — quick pulse
+│   ├── skill-weekly.md                 ← /weekly — Friday review and audit
+│   └── skill-1on1-prep.md              ← /1on1-prep — 1-on-1 meeting prep
+│
+└── infrastructure/
+    ├── worker-api.mjs                  ← Cloudflare Worker source
+    ├── schema.sql                      ← D1 database schema
+    └── deploy-notes.md                 ← Deploy patterns and gotchas
 ```
 
 ---
 
 ## Quick Start
 
-1. **Create a Claude Project** and upload the `layer-1-memory/` files with your details filled in
+1. **Create a Claude Project** and upload the `reference/` and `knowledge-base/` files with your details filled in
 2. **Set up Cloudflare** (free tier) — create a D1 database, deploy the Worker, run the schema
 3. **Add your API URL and token** to `project-instructions-template.md` and upload it
-4. **Upload the skill files** from `layer-3-skills/` with your details filled in
+4. **Upload the skill files** from `skills/` with your details filled in
 5. **Deploy a dashboard** to Netlify (free tier) — single HTML file that pulls from your API
 
 Detailed setup instructions are in the [blueprint](https://ballyhofam-bot.github.io/claude-project-os/blueprint.html).
