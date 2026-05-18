@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Persistent Claude Assistant — Architecture Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #fafaf8;
+  color: #1a1a1a;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  font-size: 15px;
+}
+
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 72px 40px 80px;
+}
+
+h2 {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #111;
+  margin-bottom: 12px;
+  letter-spacing: -0.3px;
+}
+
+h3 { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+
+p, li { color: #444; font-size: 15px; max-width: 680px; }
+p + p { margin-top: 8px; }
+
+code {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  background: #efedea;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #1a1a1a;
+}
+
+strong { font-weight: 600; color: #1a1a1a; }
+
+.section { margin-bottom: 56px; }
+
+.section-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+
+hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
+
+/* ── FILE TABLE ── */
+.file-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+
+.file-table th {
+  text-align: left; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1px; color: #999;
+  padding: 0 0 8px; border-bottom: 2px solid #ddd;
+}
+
+.file-table td {
+  padding: 7px 0; border-bottom: 1px solid #eee; vertical-align: top;
+}
+
+.file-table td:first-child {
+  font-family: 'DM Mono', monospace; font-size: 13px; color: #1a1a1a;
+  white-space: nowrap; padding-right: 24px; font-weight: 500; width: 240px;
+}
+
+.file-table td:last-child { color: #666; }
+
+.file-group td {
+  padding-top: 20px; font-weight: 600; color: #1a1a1a;
+  font-size: 13px; letter-spacing: 0.3px; border-bottom: 1px solid #ddd;
+}
+
+.file-group td:first-child { font-family: 'DM Sans', sans-serif; }
+
+/* ── TWO-COL ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
+
+.col-card { border: 1px solid #ddd; border-radius: 6px; padding: 20px; background: #fff; }
+.col-card h3 { margin-bottom: 4px; }
+.col-card .meta { font-family: 'DM Mono', monospace; font-size: 12px; color: #999; margin-bottom: 10px; }
+.col-card p { font-size: 14px; margin: 0; }
+
+/* ── FLOW ── */
+.flow-line { display: flex; align-items: center; gap: 0; margin: 20px 0; font-size: 13px; }
+
+.flow-node {
+  background: #fff; border: 1px solid #ddd; border-radius: 5px;
+  padding: 10px 14px; text-align: center; flex-shrink: 0;
+}
+
+.flow-node strong { display: block; font-size: 13px; margin-bottom: 1px; }
+.flow-node span { font-size: 11px; color: #888; }
+.flow-sep { color: #bbb; padding: 0 8px; font-size: 16px; flex-shrink: 0; }
+
+/* ── COMMANDS ── */
+.cmd-list { margin-top: 16px; }
+
+.cmd-row {
+  display: grid; grid-template-columns: 100px 140px 1fr; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid #eee; font-size: 14px; align-items: baseline;
+}
+
+.cmd-row:last-child { border-bottom: none; }
+.cmd-row code { font-size: 14px; font-weight: 500; background: none; padding: 0; }
+.cmd-row .when { font-size: 12px; color: #999; font-weight: 500; }
+.cmd-row .what { color: #555; }
+
+/* ── LESSONS ── */
+.lesson-item { padding: 12px 0; border-bottom: 1px solid #eee; }
+.lesson-item:last-child { border-bottom: none; }
+.lesson-item h3 { font-size: 14px; margin-bottom: 3px; }
+.lesson-item p { font-size: 14px; color: #666; margin: 0; }
+
+/* ── ROUTINE ── */
+.routine-row { display: grid; grid-template-columns: 80px 1fr; gap: 12px; padding: 8px 0; font-size: 14px; align-items: baseline; }
+.routine-label { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; color: #999; }
+
+/* ── STACK ── */
+.stack-row {
+  display: grid; grid-template-columns: 140px 90px 1fr; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid #eee; font-size: 14px; align-items: baseline;
+}
+
+.stack-row:last-child { border-bottom: none; }
+.stack-row strong { font-size: 14px; }
+.stack-price { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+.stack-price.free { color: #2a9d5c; }
+
+/* ── BUILD STEPS ── */
+.build-steps { counter-reset: buildstep; margin-top: 16px; }
+
+.build-step { display: grid; grid-template-columns: 28px 1fr; gap: 12px; margin-bottom: 16px; align-items: start; }
+
+.build-step::before {
+  counter-increment: buildstep; content: counter(buildstep);
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: #999; padding-top: 1px;
+}
+
+.build-step h3 { margin-bottom: 3px; }
+.build-step p { font-size: 14px; color: #555; margin: 0; }
+
+/* ── FOOTER ── */
+.footer {
+  margin-top: 56px; padding-top: 20px; border-top: 1px solid #ddd;
+  font-size: 13px; color: #999; display: flex; justify-content: space-between;
+}
+
+.footer span { font-family: 'DM Mono', monospace; font-size: 12px; }
+
+@media (max-width: 700px) {
+  .page { padding: 32px 20px 60px; }
+  .two-col { grid-template-columns: 1fr; }
+  .cmd-row { grid-template-columns: 1fr; gap: 2px; }
+  .stack-row { grid-template-columns: 1fr; gap: 2px; }
+  .routine-row { grid-template-columns: 1fr; gap: 2px; }
+  .flow-line { flex-wrap: wrap; gap: 6px; }
+  .flow-sep { display: none; }
+  .file-table td:first-child { width: auto; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="section">
+    <div class="section-num">01 — Project Files</div>
+    <h2>What Claude reads every session</h2>
+    <p>These markdown files live inside a Claude Project. They give Claude persistent context about the job, people, infrastructure, and repeatable workflows. Claude reads them at the start of every conversation — like onboarding docs for a hire that never forgets.</p>
+
+    <table class="file-table">
+      <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr class="file-group"><td colspan="2">Reference — loaded first, every session</td></tr>
+        <tr><td>ref-context.md</td><td>Who I am, career trajectory, daily cadence, what to watch for</td></tr>
+        <tr><td>ref-project-instructions.md</td><td>API endpoints, credentials, key people, facility context, commands</td></tr>
+        <tr><td>ref-debrief-protocol.md</td><td>Post-meeting extraction format and strategic analysis structure</td></tr>
+
+        <tr class="file-group"><td colspan="2">Skills — slash commands Claude executes like scripts</td></tr>
+        <tr><td>skill-morning.md</td><td>/morning — pull stats, surface overdue, check drift, flag cold relationships</td></tr>
+        <tr><td>skill-debrief.md</td><td>/debrief — extract tasks and intel from transcript, review gate, push to database</td></tr>
+        <tr><td>skill-close.md</td><td>/close — capture decisions, update state, prevent context loss</td></tr>
+        <tr><td>skill-weekly.md</td><td>/weekly — full audit: contradictions, stale data, duplicates, drift</td></tr>
+        <tr><td>skill-1on1-prep.md</td><td>/1on1-prep — 1-on-1 meeting prep with open items and talking points</td></tr>
+        <tr><td>skill-status.md</td><td>/status — quick pulse on tasks, blocked items, priorities</td></tr>
+        <tr><td>skill-tribal.md</td><td>/tribal — quick-capture undocumented knowledge to the database</td></tr>
+        <tr><td>skill-floorform.md</td><td>/floorform — opens a mobile data collection form for floor walkthroughs</td></tr>
+        <tr><td>skill-audit.md</td><td>/audit — semantic audit and drift scan across the whole system</td></tr>
+
+        <tr class="file-group"><td colspan="2">Knowledge base — what doesn't exist in any official system</td></tr>
+        <tr><td>kb-tribal-knowledge.md</td><td>Legacy snapshot — live data now in D1 database via API</td></tr>
+        <tr><td>kb-people-intel.md</td><td>Legacy snapshot — relationship dynamics now in D1 via API</td></tr>
+        <tr><td>kb-lessons.md</td><td>Dead ends and mistakes only. Force-read every morning to prevent repeats.</td></tr>
+
+        <tr class="file-group"><td colspan="2">Infrastructure — the code that connects everything</td></tr>
+        <tr><td>infra-worker-api.mjs</td><td>Live Cloudflare Worker source — the API Claude reads and writes to</td></tr>
+        <tr><td>infra-deploy-notes.md</td><td>Deploy patterns, gotchas, credential locations</td></tr>
+
+        <tr class="file-group"><td colspan="2">Tools — interactive artifacts</td></tr>
+        <tr><td>tool-floor-form.jsx</td><td>Mobile React form for machine walkthrough data collection</td></tr>
+        <tr><td>tool-floor-form.html</td><td>Same form as standalone HTML for phone browser</td></tr>
+        <tr><td>tool-1on1-coach.jsx</td><td>Interactive 1-on-1 meeting prep coach</td></tr>
+
+        <tr class="file-group"><td colspan="2">Meta</td></tr>
+        <tr><td>00-index.md</td><td>This file list. Naming convention, rules, what goes where.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <div class="section-num">02 — Database + Dashboard</div>
+    <h2>The memory that survives between chats</h2>
+    <p>The markdown files are static context. These two layers hold dynamic state — tasks, people, knowledge — that changes every day.</p>
+
+    <div class="two-col">
+      <div class="col-card">
+        <h3>Database + API</h3>
+        <div class="meta">Cloudflare D1 + Workers</div>
+        <p>Tasks, people directory, tribal knowledge, relationship intel. Claude reads and writes via API calls during conversations. A cron job emails a weekly digest every Friday.</p>
+      </div>
+      <div class="col-card">
+        <h3>Dashboard</h3>
+        <div class="meta">Netlify, single HTML file</div>
+        <p>Visual command center — kanban board, people directory, task filters. Opens in a browser when you need the big picture without starting a Claude chat.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <div class="section-num">03 — Data Flow</div>
+    <h2>Meeting to database in one command</h2>
+    <p>Nothing hits the database without approval. Claude extracts, you review, then it pushes. This single rule prevents most of the problems people run into with AI assistants.</p>
+
+    <div class="flow-line">
+      <div class="flow-node"><strong>Meeting</strong><span>Otter.ai records</span></div>
+      <div class="flow-sep">&rarr;</div>
+      <div class="flow-node"><strong>/debrief</strong><span>Slash command</span></div>
+      <div class="flow-sep">&rarr;</div>
+      <div class="flow-node"><strong>Extract</strong><span>Tasks + intel</span></div>
+      <div class="flow-sep">&rarr;</div>
+      <div class="flow-node"><strong>Review</strong><span>You approve</span></div>
+      <div class="flow-sep">&rarr;</div>
+      <div class="flow-node"><strong>D1 Push</strong><span>API writes</span></div>
+      <div class="flow-sep">&rarr;</div>
+      <div class="flow-node"><strong>Dashboard</strong><span>Auto-updates</span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <div class="section-num">04 — Commands</div>
+    <h2>Slash commands turn Claude into an executor</h2>
+    <p>Each command is a markdown file with step-by-step instructions Claude follows exactly. You type the command, Claude runs the playbook.</p>
+
+    <div class="cmd-list">
+      <div class="cmd-row"><code>/morning</code><span class="when">Daily, before first meeting</span><span class="what">Pull task stats, surface overdue and blocked items, check for data drift, flag cold relationships</span></div>
+      <div class="cmd-row"><code>/debrief</code><span class="when">After every meeting</span><span class="what">Pull transcript, extract tasks and people intel, present for review, push approved items to database</span></div>
+      <div class="cmd-row"><code>/close</code><span class="when">End of each session</span><span class="what">Capture decisions, update state, ensure nothing is lost before the context window resets</span></div>
+      <div class="cmd-row"><code>/weekly</code><span class="when">Friday</span><span class="what">Full semantic audit — contradictions, stale data, orphaned references, relationship gaps, duplicates</span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <div class="section-num">05 — Lessons</div>
+    <h2>Things that will bite you if nobody warns you</h2>
+
+    <div>
+      <div class="lesson-item">
+        <h3>Artifact persistence is fake</h3>
+        <p>Claude's in-app artifacts don't survive closing the app. It creates a new instance every time. Anything that needs to persist goes to an external host or gets exported before the session ends.</p>
+      </div>
+      <div class="lesson-item">
+        <h3>AI over-attributes tasks to you</h3>
+        <p>Claude will assign you tasks that were merely mentioned in conversation, not directed at you. Build a review gate — nothing hits the database without explicit approval. Default ambiguous items to FYI.</p>
+      </div>
+      <div class="lesson-item">
+        <h3>Transcript tools misspell names</h3>
+        <p>Otter, Whisper, and other transcription tools frequently get names wrong. Always search for name variants before creating a new person record or you'll create duplicates.</p>
+      </div>
+      <div class="lesson-item">
+        <h3>Log files grow fast</h3>
+        <p>Session logs hit noise threshold within two months. Build monthly archiving into your workflow from day one.</p>
+      </div>
+      <div class="lesson-item">
+        <h3>Only log failures, not successes</h3>
+        <p>Your lessons file should capture dead ends and mistakes. The rest of the system tracks wins. The lessons file prevents repeat mistakes and gets force-read every morning.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <div class="section-num">06 — Daily Routine</div>
+    <h2>It compounds. Every meeting makes it smarter.</h2>
+    <p>Every debrief adds knowledge, every correction trains better behavior, every weekly audit cleans accumulated drift.</p>
+
+    <div style="margin-top: 16px;">
+      <div class="routine-row"><span class="routine-label">AM</span><span><code>/morning</code> — pull stats, surface overdue, check drift, flag cold relationships</span></div>
+      <div class="routine-row"><span class="routine-label">POST-MTG</span><span><code>/debrief</code> — extract tasks and intel from transcript, review, push to database</span></div>
+      <div class="routine-row"><span class="routine-label">EOD</span><span><code>/close</code> — capture decisions, update state, prevent context loss</span></div>
+      <div class="routine-row"><span class="routine-label">FRIDAY</span><span><code>/weekly</code> — full audit: contradictions, stale data, duplicates, relationship gaps</span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <div class="section-num">07 — Cost</div>
+    <h2>Total cost: $100/month. Infrastructure is free.</h2>
+
+    <div style="margin-top: 16px;">
+      <div class="stack-row"><strong>Claude Max</strong><span class="stack-price">$100/mo</span><span>Projects give persistent file context. 5x more usage than Pro.</span></div>
+      <div class="stack-row"><strong>Cloudflare</strong><span class="stack-price free">Free tier</span><span>D1 database (SQLite at the edge) + Workers (serverless API). 100K reads/day free.</span></div>
+      <div class="stack-row"><strong>Netlify</strong><span class="stack-price free">Free tier</span><span>Static site hosting for the dashboard. Single HTML file, no build step.</span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="section">
+    <div class="section-num">08 — Getting Started</div>
+    <h2>Where to begin if you want to build your own</h2>
+
+    <div class="build-steps">
+      <div class="build-step">
+        <div>
+          <h3>Start with the markdown files</h3>
+          <p>Create a Claude Project. Add a context file (who you are, what you do, your daily rhythm), an index file, and one skill file for your most common workflow. This alone — before any infrastructure — makes Claude dramatically more useful.</p>
+        </div>
+      </div>
+      <div class="build-step">
+        <div>
+          <h3>Use Claude to build the API</h3>
+          <p>Ask Claude to write a Cloudflare Worker with a D1 database. Start with tasks and people tables. Claude can write the Worker, the SQL schema, and walk you through the Cloudflare dashboard setup.</p>
+        </div>
+      </div>
+      <div class="build-step">
+        <div>
+          <h3>Connect Claude to the API</h3>
+          <p>Add your Worker URL and auth token to your project instructions file. Now Claude can read from and write to your database during conversations. Start with a <code>/morning</code> skill that pulls your open tasks.</p>
+        </div>
+      </div>
+      <div class="build-step">
+        <div>
+          <h3>Build the dashboard</h3>
+          <p>Ask Claude to build a single-file HTML dashboard that pulls from your API. Deploy to Netlify. This gives you a visual view of everything Claude manages for you.</p>
+        </div>
+      </div>
+      <div class="build-step">
+        <div>
+          <h3>Add the debrief loop</h3>
+          <p>Connect a transcription tool (Otter.ai, Granola, or manual paste). Build a <code>/debrief</code> skill that extracts tasks and knowledge from meetings — with a review gate. Every meeting now feeds the system.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>May 2026</p>
+    <span>claude + cloudflare + netlify</span>
+  </div>
+
+</div>
+</body>
+</html>
