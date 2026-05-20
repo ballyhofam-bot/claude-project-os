@@ -98,6 +98,9 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
 .col-card .meta { font-family: 'DM Mono', monospace; font-size: 12px; color: #999; margin-bottom: 10px; }
 .col-card p { font-size: 14px; margin: 0; }
 
+/* ── THREE-COL ── */
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 16px; }
+
 /* ── FLOW ── */
 .flow-line { display: flex; align-items: center; gap: 0; margin: 20px 0; font-size: 13px; }
 
@@ -109,6 +112,39 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
 .flow-node strong { display: block; font-size: 13px; margin-bottom: 1px; }
 .flow-node span { font-size: 11px; color: #888; }
 .flow-sep { color: #bbb; padding: 0 8px; font-size: 16px; flex-shrink: 0; }
+
+/* ── ARCH DIAGRAM ── */
+.arch-box {
+  border: 1px solid #ddd; border-radius: 8px; padding: 24px 20px; background: #fff;
+  position: relative;
+}
+.arch-box h3 { margin-bottom: 2px; }
+.arch-box .meta { font-family: 'DM Mono', monospace; font-size: 12px; color: #999; margin-bottom: 8px; }
+.arch-box p { font-size: 13px; margin: 0; color: #555; }
+.arch-box .tag {
+  position: absolute; top: 12px; right: 16px;
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+  padding: 2px 8px; border-radius: 3px;
+}
+.tag-slow { background: #f0f0ee; color: #888; }
+.tag-daily { background: #e8f5e9; color: #2e7d32; }
+.tag-monthly { background: #fff3e0; color: #e65100; }
+
+.arch-arrows {
+  text-align: center; padding: 10px 0; font-family: 'DM Mono', monospace;
+  font-size: 12px; color: #999; letter-spacing: 1px;
+}
+
+.migration-row {
+  display: grid; grid-template-columns: 120px 24px 1fr; gap: 8px;
+  padding: 8px 0; font-size: 14px; align-items: baseline;
+  border-bottom: 1px solid #eee;
+}
+.migration-row:last-child { border-bottom: none; }
+.migration-row .freq {
+  font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; color: #999;
+}
+.migration-row .arrow { color: #bbb; text-align: center; }
 
 /* ── COMMANDS ── */
 .cmd-list { margin-top: 16px; }
@@ -167,10 +203,11 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
 
 @media (max-width: 700px) {
   .page { padding: 32px 20px 60px; }
-  .two-col { grid-template-columns: 1fr; }
+  .two-col, .three-col { grid-template-columns: 1fr; }
   .cmd-row { grid-template-columns: 1fr; gap: 2px; }
   .stack-row { grid-template-columns: 1fr; gap: 2px; }
   .routine-row { grid-template-columns: 1fr; gap: 2px; }
+  .migration-row { grid-template-columns: 1fr; gap: 2px; }
   .flow-line { flex-wrap: wrap; gap: 6px; }
   .flow-sep { display: none; }
   .file-table td:first-child { width: auto; }
@@ -180,8 +217,65 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
 <body>
 <div class="page">
 
+  <!-- 01 — THREE-LAYER ARCHITECTURE -->
   <div class="section">
-    <div class="section-num">01 — Project Files</div>
+    <div class="section-num">01 — Three-Layer Architecture</div>
+    <h2>Three layers. Each solves a different problem. They talk to each other.</h2>
+    <p>The system isn't three separate tools — it's three layers with defined roles, explicit data flows, and bidirectional checks that keep them in sync. D1 is the source of truth for operational data. Memories hold the big picture. Project files hold the stable playbook. Skills are the glue that pull from all three.</p>
+
+    <div class="three-col">
+      <div class="arch-box">
+        <span class="tag tag-monthly">monthly updates</span>
+        <h3>Memories</h3>
+        <div class="meta">Claude's built-in memory</div>
+        <p>Identity, current state, behavioral rules, architecture decisions. The stuff that rarely changes. Reserved for big-picture context — not operational data.</p>
+      </div>
+      <div class="arch-box">
+        <span class="tag tag-slow">stable</span>
+        <h3>Project Files</h3>
+        <div class="meta">~20 markdown files in Claude Projects</div>
+        <p>Playbook and stable reference. Org charts, skill scripts, deploy notes, lessons learned. Changes when your job or systems change, not daily.</p>
+      </div>
+      <div class="arch-box">
+        <span class="tag tag-daily">daily writes</span>
+        <h3>D1 Database</h3>
+        <div class="meta">Cloudflare D1 + Workers API</div>
+        <p>Live operational data — tasks, people, tribal knowledge, relationship intel. Source of truth. Claude reads and writes via API every session.</p>
+      </div>
+    </div>
+
+    <div class="arch-arrows">&#8593; &#8595; &nbsp; bidirectional sync &nbsp; &#8593; &#8595;</div>
+
+    <p style="margin-top: 12px;"><strong>Migration rules</strong> — data moves between layers on a cadence, not randomly:</p>
+    <div style="margin-top: 12px;">
+      <div class="migration-row"><span class="freq">Weekly+</span><span class="arrow">&rarr;</span><span>D1. Tasks, knowledge captures, intel updates, anything that changes during the workweek.</span></div>
+      <div class="migration-row"><span class="freq">Monthly</span><span class="arrow">&rarr;</span><span>Memories. Architecture changes, role shifts, new behavioral rules, updated goals.</span></div>
+      <div class="migration-row"><span class="freq">Rare</span><span class="arrow">&rarr;</span><span>Project files. Org chart updates, new skills, stable reference that doesn't change for months.</span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- 02 — SKILLS AS GLUE -->
+  <div class="section">
+    <div class="section-num">02 — Skills Are the Glue</div>
+    <h2>Slash commands connect the layers</h2>
+    <p>Each skill is a markdown file with step-by-step instructions Claude follows exactly. The critical design rule: every skill explicitly declares which data sources it pulls from and in what order. Skills don't just read one layer — they consult all three, reconcile conflicts, and write back.</p>
+
+    <div class="cmd-list">
+      <div class="cmd-row"><code>/morning</code><span class="when">Daily, before first meeting</span><span class="what">Pull D1 stats, read project lessons file, compare memories against D1 counts, flag cold relationships</span></div>
+      <div class="cmd-row"><code>/debrief</code><span class="when">After every meeting</span><span class="what">Pull transcript, extract tasks and people intel, present for review, push approved items to D1</span></div>
+      <div class="cmd-row"><code>/close</code><span class="when">End of each session</span><span class="what">Capture decisions, run bidirectional drift check (D1 &harr; memories), update state across layers</span></div>
+      <div class="cmd-row"><code>/weekly</code><span class="when">Friday</span><span class="what">Full semantic audit — contradictions, stale data, orphaned references, relationship gaps, duplicates</span></div>
+      <div class="cmd-row"><code>/grill-me</code><span class="when">Before executing any plan</span><span class="what">Stress-test a plan or design — Claude interviews you one question at a time, walking each branch of the decision tree with its recommended answer</span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- 03 — PROJECT FILES -->
+  <div class="section">
+    <div class="section-num">03 — Project Files</div>
     <h2>What Claude reads every session</h2>
     <p>These markdown files live inside a Claude Project. They give Claude persistent context about the job, people, infrastructure, and repeatable workflows. Claude reads them at the start of every conversation — like onboarding docs for a hire that never forgets.</p>
 
@@ -191,17 +285,16 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
         <tr class="file-group"><td colspan="2">Reference — loaded first, every session</td></tr>
         <tr><td>ref-context.md</td><td>Who I am, career trajectory, daily cadence, what to watch for</td></tr>
         <tr><td>ref-project-instructions.md</td><td>API endpoints, credentials, key people, facility context, commands</td></tr>
+        <tr><td>ref-eaton-stable.md</td><td>Stable reference pruned from memories — org chart, PPE rules, shift supervisors</td></tr>
         <tr><td>ref-debrief-protocol.md</td><td>Post-meeting extraction format and strategic analysis structure</td></tr>
 
         <tr class="file-group"><td colspan="2">Skills — slash commands Claude executes like scripts</td></tr>
         <tr><td>skill-morning.md</td><td>/morning — pull stats, surface overdue, check drift, flag cold relationships</td></tr>
         <tr><td>skill-debrief.md</td><td>/debrief — extract tasks and intel from transcript, review gate, push to database</td></tr>
-        <tr><td>skill-close.md</td><td>/close — capture decisions, update state, prevent context loss</td></tr>
+        <tr><td>skill-close.md</td><td>/close — capture decisions, drift check, update state across all three layers</td></tr>
         <tr><td>skill-weekly.md</td><td>/weekly — full audit: contradictions, stale data, duplicates, drift</td></tr>
+        <tr><td>skill-grill-me.md</td><td>/grill-me — stress-test plans by walking every branch of the decision tree</td></tr>
         <tr><td>skill-1on1-prep.md</td><td>/1on1-prep — 1-on-1 meeting prep with open items and talking points</td></tr>
-        <tr><td>skill-status.md</td><td>/status — quick pulse on tasks, blocked items, priorities</td></tr>
-        <tr><td>skill-tribal.md</td><td>/tribal — quick-capture undocumented knowledge to the database</td></tr>
-        <tr><td>skill-floorform.md</td><td>/floorform — opens a mobile data collection form for floor walkthroughs</td></tr>
         <tr><td>skill-audit.md</td><td>/audit — semantic audit and drift scan across the whole system</td></tr>
 
         <tr class="file-group"><td colspan="2">Knowledge base — what doesn't exist in any official system</td></tr>
@@ -215,8 +308,7 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
 
         <tr class="file-group"><td colspan="2">Tools — interactive artifacts</td></tr>
         <tr><td>tool-floor-form.jsx</td><td>Mobile React form for machine walkthrough data collection</td></tr>
-        <tr><td>tool-floor-form.html</td><td>Same form as standalone HTML for phone browser</td></tr>
-        <tr><td>tool-1on1-coach.jsx</td><td>Interactive 1-on-1 meeting prep coach</td></tr>
+        <tr><td>tool-1on1-coach.jsx</td><td>Interactive 1-on-1 meeting prep coach (API-powered)</td></tr>
 
         <tr class="file-group"><td colspan="2">Meta</td></tr>
         <tr><td>00-index.md</td><td>This file list. Naming convention, rules, what goes where.</td></tr>
@@ -226,29 +318,9 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
 
   <hr>
 
+  <!-- 04 — DATA FLOW -->
   <div class="section">
-    <div class="section-num">02 — Database + Dashboard</div>
-    <h2>The memory that survives between chats</h2>
-    <p>The markdown files are static context. These two layers hold dynamic state — tasks, people, knowledge — that changes every day.</p>
-
-    <div class="two-col">
-      <div class="col-card">
-        <h3>Database + API</h3>
-        <div class="meta">Cloudflare D1 + Workers</div>
-        <p>Tasks, people directory, tribal knowledge, relationship intel. Claude reads and writes via API calls during conversations. A cron job emails a weekly digest every Friday.</p>
-      </div>
-      <div class="col-card">
-        <h3>Dashboard</h3>
-        <div class="meta">Netlify, single HTML file</div>
-        <p>Visual command center — kanban board, people directory, task filters. Opens in a browser when you need the big picture without starting a Claude chat.</p>
-      </div>
-    </div>
-  </div>
-
-  <hr>
-
-  <div class="section">
-    <div class="section-num">03 — Data Flow</div>
+    <div class="section-num">04 — Data Flow</div>
     <h2>Meeting to database in one command</h2>
     <p>Nothing hits the database without approval. Claude extracts, you review, then it pushes. This single rule prevents most of the problems people run into with AI assistants.</p>
 
@@ -265,27 +337,55 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
       <div class="flow-sep">&rarr;</div>
       <div class="flow-node"><strong>Dashboard</strong><span>Auto-updates</span></div>
     </div>
-  </div>
 
-  <hr>
-
-  <div class="section">
-    <div class="section-num">04 — Commands</div>
-    <h2>Slash commands turn Claude into an executor</h2>
-    <p>Each command is a markdown file with step-by-step instructions Claude follows exactly. You type the command, Claude runs the playbook.</p>
-
-    <div class="cmd-list">
-      <div class="cmd-row"><code>/morning</code><span class="when">Daily, before first meeting</span><span class="what">Pull task stats, surface overdue and blocked items, check for data drift, flag cold relationships</span></div>
-      <div class="cmd-row"><code>/debrief</code><span class="when">After every meeting</span><span class="what">Pull transcript, extract tasks and people intel, present for review, push approved items to database</span></div>
-      <div class="cmd-row"><code>/close</code><span class="when">End of each session</span><span class="what">Capture decisions, update state, ensure nothing is lost before the context window resets</span></div>
-      <div class="cmd-row"><code>/weekly</code><span class="when">Friday</span><span class="what">Full semantic audit — contradictions, stale data, orphaned references, relationship gaps, duplicates</span></div>
+    <p style="margin-top: 20px;"><strong>Drift check at close</strong> — every session ends with a bidirectional sync:</p>
+    <div class="two-col" style="margin-top: 12px;">
+      <div class="col-card">
+        <h3>D1 &rarr; Memories</h3>
+        <div class="meta">Does memory match reality?</div>
+        <p>Compare task counts, WSRA progress, people count in memories against what D1 actually holds. Flag mismatches before the context window closes.</p>
+      </div>
+      <div class="col-card">
+        <h3>Memories &rarr; D1</h3>
+        <div class="meta">Did anything get missed?</div>
+        <p>Check if decisions or state changes from this session need to be written to D1 before the chat ends. Catch orphaned work.</p>
+      </div>
     </div>
   </div>
 
   <hr>
 
+  <!-- 05 — DRIFT & RECOVERY -->
   <div class="section">
-    <div class="section-num">05 — Lessons</div>
+    <div class="section-num">05 — Drift &amp; Recovery</div>
+    <h2>The layers will drift. Build the checks in from day one.</h2>
+    <p>Three data stores means three places that can get out of sync. Without automated checks, you'll discover drift at the worst time — mid-conversation when a wrong number leads to a wrong decision.</p>
+
+    <div>
+      <div class="lesson-item">
+        <h3>Morning drift scan</h3>
+        <p>Lightweight check built into <code>/morning</code>. Compares memory claims against D1 counts (task totals, people count, key metrics). Also flags orphaned task references and cold key relationships. No extra API calls — uses data already pulled for the brief.</p>
+      </div>
+      <div class="lesson-item">
+        <h3>Close drift check</h3>
+        <p>Bidirectional comparison built into <code>/close</code>. Runs after every session. Catches both directions: D1 drifting from what memories claim, and session work that hasn't been written to D1 yet.</p>
+      </div>
+      <div class="lesson-item">
+        <h3>Weekly full audit</h3>
+        <p><code>/weekly</code> runs the deep scan: contradictions between layers, intel conflicts, orphaned references, duplicate records, stale knowledge, memory drift, and cold relationships. Stores a baseline to D1 for trend tracking.</p>
+      </div>
+      <div class="lesson-item">
+        <h3>D1 failure protocol</h3>
+        <p>When the API is down mid-conversation: buffer failed writes in the chat, degrade to memories + project files for context, flag the failure at close, recover and replay buffered writes next session. Don't lose work just because the database is unreachable.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- 06 — LESSONS -->
+  <div class="section">
+    <div class="section-num">06 — Lessons</div>
     <h2>Things that will bite you if nobody warns you</h2>
 
     <div>
@@ -302,8 +402,8 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
         <p>Otter, Whisper, and other transcription tools frequently get names wrong. Always search for name variants before creating a new person record or you'll create duplicates.</p>
       </div>
       <div class="lesson-item">
-        <h3>Log files grow fast</h3>
-        <p>Session logs hit noise threshold within two months. Build monthly archiving into your workflow from day one.</p>
+        <h3>Memories bloat fast</h3>
+        <p>Move stable reference out of memories into project files. Memories should hold identity, current state, behavioral rules, and architecture decisions — not org charts or shift schedules. Prune monthly.</p>
       </div>
       <div class="lesson-item">
         <h3>Only log failures, not successes</h3>
@@ -314,23 +414,26 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
 
   <hr>
 
+  <!-- 07 — DAILY ROUTINE -->
   <div class="section">
-    <div class="section-num">06 — Daily Routine</div>
+    <div class="section-num">07 — Daily Routine</div>
     <h2>It compounds. Every meeting makes it smarter.</h2>
-    <p>Every debrief adds knowledge, every correction trains better behavior, every weekly audit cleans accumulated drift.</p>
+    <p>Every debrief adds knowledge, every correction trains better behavior, every close catches drift, every weekly audit cleans what accumulated.</p>
 
     <div style="margin-top: 16px;">
-      <div class="routine-row"><span class="routine-label">AM</span><span><code>/morning</code> — pull stats, surface overdue, check drift, flag cold relationships</span></div>
-      <div class="routine-row"><span class="routine-label">POST-MTG</span><span><code>/debrief</code> — extract tasks and intel from transcript, review, push to database</span></div>
-      <div class="routine-row"><span class="routine-label">EOD</span><span><code>/close</code> — capture decisions, update state, prevent context loss</span></div>
+      <div class="routine-row"><span class="routine-label">AM</span><span><code>/morning</code> — pull D1 stats, read lessons, lightweight drift scan, flag cold relationships</span></div>
+      <div class="routine-row"><span class="routine-label">POST-MTG</span><span><code>/debrief</code> — extract tasks and intel from transcript, review, push to D1</span></div>
+      <div class="routine-row"><span class="routine-label">EOD</span><span><code>/close</code> — capture decisions, bidirectional drift check, sync all three layers</span></div>
       <div class="routine-row"><span class="routine-label">FRIDAY</span><span><code>/weekly</code> — full audit: contradictions, stale data, duplicates, relationship gaps</span></div>
+      <div class="routine-row"><span class="routine-label">AS NEEDED</span><span><code>/grill-me</code> — stress-test any plan before committing to it</span></div>
     </div>
   </div>
 
   <hr>
 
+  <!-- 08 — COST -->
   <div class="section">
-    <div class="section-num">07 — Cost</div>
+    <div class="section-num">08 — Cost</div>
     <h2>Total cost: $100/month. Infrastructure is free.</h2>
 
     <div style="margin-top: 16px;">
@@ -342,8 +445,9 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
 
   <hr>
 
+  <!-- 09 — GETTING STARTED -->
   <div class="section">
-    <div class="section-num">08 — Getting Started</div>
+    <div class="section-num">09 — Getting Started</div>
     <h2>Where to begin if you want to build your own</h2>
 
     <div class="build-steps">
@@ -367,8 +471,8 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
       </div>
       <div class="build-step">
         <div>
-          <h3>Build the dashboard</h3>
-          <p>Ask Claude to build a single-file HTML dashboard that pulls from your API. Deploy to Netlify. This gives you a visual view of everything Claude manages for you.</p>
+          <h3>Build the drift checks early</h3>
+          <p>Add a bidirectional comparison to your <code>/close</code> skill from the start. Memory claims vs D1 reality, session work vs database state. Drift is invisible until it causes a bad decision — catch it every session instead.</p>
         </div>
       </div>
       <div class="build-step">
@@ -377,11 +481,17 @@ hr { border: none; height: 1px; background: #ddd; margin: 48px 0; }
           <p>Connect a transcription tool (Otter.ai, Granola, or manual paste). Build a <code>/debrief</code> skill that extracts tasks and knowledge from meetings — with a review gate. Every meeting now feeds the system.</p>
         </div>
       </div>
+      <div class="build-step">
+        <div>
+          <h3>Build the dashboard last</h3>
+          <p>Ask Claude to build a single-file HTML dashboard that pulls from your API. Deploy to Netlify. This gives you a visual view of everything Claude manages — but only after the data pipeline is solid.</p>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="footer">
-    <p>May 2026</p>
+    <p>v2.1 — May 2026</p>
     <span>claude + cloudflare + netlify</span>
   </div>
 
