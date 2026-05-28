@@ -1,0 +1,94 @@
+# Project OS — Claude Code Rules
+
+## Who You're Working With
+
+[YOUR_NAME]. [YOUR_ROLE] at [YOUR_COMPANY]. Replace this section with your actual context — career trajectory, who you report to, who reports to you, key transitions in flight.
+
+## Communication Rules
+
+**Style:** Direct, terse, correction-oriented. No corporate jargon.
+
+**Banned words/phrases:** [your list — examples: leverage, streamline, deep dive, unpack, navigate (metaphorical), ecosystem, supercharge, empower, unlock, elevate, utilize, facilitate, impactful, robust, holistic, innovative, cutting-edge, synergy, seamlessly, delve]
+
+**Banned openers:** "Certainly!", "Absolutely!", "Great question!", "Happy to help!"
+
+**Banned habits:** Over-bolding, unnecessary headers, restating the question, explaining what you're about to do instead of doing it, excessive hedging.
+
+**Execution preference:** Act autonomously. Don't ask for things you can verify yourself. Present extracted data for review only on debriefs.
+
+## Memory Architecture
+
+Where data lives. When facts disagree, the authoritative source wins.
+
+- **D1** (via Worker API) — authoritative for everything dynamic: tasks, people, knowledge, intel, leadership moves, scoreboard. Always pull fresh; don't cache facts in `.md`.
+- **This file (CLAUDE.md)** — authoritative for stable rules: communication style, infra IDs, key people roster, priorities, targets. Auto-loaded every session.
+- **`ref/stable.md`** — operational reference (procedures, process flows, systems). Read on demand.
+- **`kb/lessons.md`** — active failure log. The only `.md` file ever appended to.
+
+**If a number can change, it doesn't go here.** Targets stay. Current state moves to the database.
+
+## Infrastructure
+
+### Worker API
+- **URL:** [YOUR_WORKER_URL] (also lives in `infra/env.sh` as `WORKER_API`)
+- **Auth:** Bearer token — single source of truth is `infra/env.sh` (`WORKER_TOKEN`). Rotate there, nowhere else.
+- **Worker name:** [YOUR_WORKER_NAME]
+- **Account ID:** [YOUR_CLOUDFLARE_ACCOUNT_ID]
+
+### D1 Database
+- **ID:** [YOUR_D1_DATABASE_ID]
+- **Tables:** tasks, people, knowledge, people_intel, leadership_moves, scoreboard
+
+### API Endpoints
+
+```
+GET/POST /tasks           — task CRUD (?ownership=, ?status=, ?since=, ?completed_since=, ?fields=, ?limit=)
+GET/POST /people          — people directory (?since=, ?fields=, ?limit=)
+GET/POST /intel           — people intel (?person_name=, ?intel_type=, ?since=, ?fields=, ?limit=)
+GET/POST /knowledge       — tribal knowledge (?category=, ?area=, ?q=, ?since=, ?fields=, ?limit=)
+GET/PATCH /scoreboard     — live metrics (single row, updated weekly)
+GET      /stats           — counts dashboard (always cheap — use for counts)
+GET      /moves           — leadership moves (?since=, ?category=)
+```
+
+**Filter conventions:**
+- `?since=YYYY-MM-DD` — filter by `created_at >= date`
+- `?completed_since=YYYY-MM-DD` — filter `/tasks` by `completed_at >= date`
+- `?fields=a,b,c` — return only listed columns
+- `?limit=N` — cap rows (max 1000)
+
+## API Access Pattern
+
+```bash
+source ~/projects/your-project/infra/env.sh
+
+api /stats | jq .
+
+api /tasks -X POST -H 'Content-Type: application/json' \
+  -d '{"title":"Example task","status":"todo","priority":"Medium"}' | jq .
+
+api "/tasks?ownership=mine&status=todo&since=2026-05-20&fields=id,title,priority,due_date&limit=20" | jq .
+```
+
+## Working Rules
+
+- **D1 is sole system of record** for tasks, knowledge, intel, decisions.
+- **Debrief discipline:** Stay close to what transcripts say. Flag attribution uncertainty. Don't auto-push — present for review first.
+- **Assessment before execution:** Give honest evaluation before building or acting.
+- **Drift kills systems.** Single source of truth per layer. Audit on a cadence.
+
+## File Organization
+
+```
+CLAUDE.md                 — This file (auto-loaded)
+ref/stable.md             — Operational reference (procedures, systems)
+ref/archive/              — Retired duplicates (do not read)
+infra/env.sh              — Token + URL + api() helper (DO NOT COMMIT)
+infra/worker-api.mjs      — Live Worker source (deploy from here)
+infra/wrangler.toml       — Cloudflare deploy config
+infra/WORKER_ROUTES.md    — Line-number index of Worker file
+kb/lessons.md             — Active failure log (only .md ever appended to)
+kb/archive/               — Pre-D1-migration snapshots (do not read)
+.claude/commands/         — Slash command skill files
+chat-sync/                — Project-formatted mirrors (regenerate after Code changes)
+```
