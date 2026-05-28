@@ -1,0 +1,13 @@
+name = "your-worker-name"
+main = "worker-api.mjs"
+compatibility_date = "2024-09-01"
+account_id = "your-cloudflare-account-id"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "your-d1-database-name"
+database_id = "your-d1-database-id"
+
+# Optional: weekly digest cron
+[triggers]
+crons = ["0 14 * * 5"]
